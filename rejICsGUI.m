@@ -18,6 +18,7 @@ buttonHeight  = 30;
 gap           = 10;
 topMargin     = 20;
 hintHeight    = 22;   % one-line hint above plot ICs
+numberGridYOffset = topMargin + gap / 2;   % center number buttons between top and bottom controls
 
 % Figure size (hint + top bar + number grid + bottom: two stacked full-width buttons)
 figWidth  = nCols * buttonWidth + (nCols + 1) * gap;
@@ -102,6 +103,7 @@ for k = 1:nButtons
 
     xpos = gap + col * (buttonWidth + gap);
     ypos = figHeight - topReserve ... % below top bar + gap to first number row
+        - numberGridYOffset ...
         - row * (buttonHeight + gap);
 
     btn = uicontrol( ...

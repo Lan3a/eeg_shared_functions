@@ -1,12 +1,14 @@
-function rejBadChanGUI(EEG, doOpenEegplot)
+function rejBadChanGUI(EEG, plotSpectraFunc)
 % Channel selector GUI with numbered buttons for channel names
 % Style reference: rejICsButtons
-% Top: Plot time (eegplot), Plot Spectra (custom_pop_spectopo)
+% Top: Plot time (eegplot), Plot Spectra (input spectra function)
 % Bottom: Save eegplot view PNG, REJECT MARKED (full width)
 % Channel buttons: click to select (red), used for reject
 
-if nargin < 2 || isempty(doOpenEegplot)
-    doOpenEegplot = true;
+if nargin < 2 || isempty(plotSpectraFunc)
+    plotSpectraFunc = @custom_pop_spectopo;
+elseif ~isa(plotSpectraFunc, 'function_handle')
+    error('plotSpectraFunc must be a function handle, e.g. str2func(''custom_pop_spectopo'').');
 end
 
 if ~isfield(EEG, 'chanlocs') || isempty(EEG.chanlocs)
@@ -82,7 +84,7 @@ uicontrol( ...
     'FontWeight', 'bold', ...
     'BackgroundColor', controlGray, ...
     'Position', [2 * gap + topHalfWidth, topRowY, topHalfWidth, buttonHeight], ...
-    'Callback', @(src, evt) plotSpectraCallback());
+    'Callback', @(src, evt) plotSpectraCallback(plotSpectraFunc));
 
 % --- Bottom: Save PNG (full width), REJECT MARKED (full width) ---
 rejectY = gap;
@@ -106,7 +108,7 @@ uicontrol( ...
     'FontWeight', 'bold', ...
     'BackgroundColor', controlGray, ...
     'Position', [gap, rejectY, fullCtrlWidth, buttonHeight], ...
-    'Callback', @(src, evt) rejectCallback(hFig));
+    'Callback', @(src, evt) rejectCallback(hFig, plotSpectraFunc));
 
 % --- Channel buttons in 3 columns ---
 for k = 1:nButtons
@@ -131,10 +133,8 @@ end
 
 setappdata(hFig, 'buttonHandles', buttonHandles);
 
-% Scroll viewer whenever GUI opens (first launch; REJECT handles its own open)
-if doOpenEegplot
-    openEegplotWithReset(EEG);
-end
+% Scroll viewer whenever GUI opens
+openEegplotWithReset(EEG);
 end
 
 % -------------------------------------------------------------------------
@@ -160,13 +160,13 @@ openEegplotWithReset(EEG);
 end
 
 % -------------------------------------------------------------------------
-function plotSpectraCallback()
+function plotSpectraCallback(plotSpectraFunc)
 EEG = evalin('base', 'EEG');
-custom_pop_spectopo(EEG);
+plotSpectraFunc(EEG);
 end
 
 % -------------------------------------------------------------------------
-function rejectCallback(hFig)
+function rejectCallback(hFig, plotSpectraFunc)
 EEG = evalin('base', 'EEG');
 selection = getappdata(hFig, 'selection');
 selectedIdx = find(selection);
@@ -200,10 +200,9 @@ if ~isempty(chansToRemove)
     fprintf('Rejected channels: %s\n', strjoin(chansToRemove, ', '));
 end
 
-% On REJECT: always reopen eegplot for the updated EEG, then reopen GUI
-openEegplotWithReset(EEG);
-openSpectopoWithReset(EEG);
-rejBadChanGUI(EEG, false);
+% On REJECT: reopen the spectra plot, then reopen GUI for the updated EEG
+openSpectopoWithReset(EEG, plotSpectraFunc);
+rejBadChanGUI(EEG, plotSpectraFunc);
 end
 
 % -------------------------------------------------------------------------
@@ -271,7 +270,7 @@ closeWindows('eegplot');
 pop_eegplot(EEG, 1, 1, 1);
 end
 
-function openSpectopoWithReset(EEG)
-closeWindows('custom_pop_spectopo');
-custom_pop_spectopo(EEG);
+function openSpectopoWithReset(EEG, plotSpectraFunc)
+closeWindows(func2str(plotSpectraFunc));
+plotSpectraFunc(EEG);
 end
