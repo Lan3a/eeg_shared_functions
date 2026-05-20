@@ -8,6 +8,11 @@ end
 [inDir, inExt] = parseSpec(inFileSpec);
 if ~isfolder(inDir), mkdir(inDir); end
 inStruct = listFiles(inDir, inExt);
+% Ignore input files whose basename starts with 'x_'
+if ~isempty(inStruct)
+    inBaseNames = {inStruct.bname};
+    inStruct = inStruct(~startsWith(inBaseNames, 'x_'));
+end
 if isempty(inStruct)
     error('findFilesToProcess:NoInput', 'No input files in folder: %s', inDir);
 end
@@ -23,7 +28,8 @@ else
     if isempty(outStruct)
         outBase = {};
     else
-        outBase = {outStruct.bname}.';
+        % Treat 'x_<name>' the same as '<name>' for comparison
+        outBase = regexprep({outStruct.bname}.', '^x_', '');
     end
     inBase = {inStruct.bname}.';
 
