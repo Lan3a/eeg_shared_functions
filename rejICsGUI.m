@@ -11,34 +11,30 @@ assignin('base', 'EEG', EEG);
 
 % Parameters
 nButtons      = size(EEG.icaweights, 1);
-nCols         = 3;
-nRows         = ceil(nButtons / nCols);
 buttonWidth   = 60;
 buttonHeight  = 30;
 gap           = 10;
 topMargin     = 20;
 hintHeight    = 22;   % one-line hint above plot ICs
 numberGridYOffset = topMargin + gap / 2;   % center number buttons between top and bottom controls
+pad           = 200;
 
 % Figure size (hint + top bar + number grid + bottom: two stacked full-width buttons)
-figWidth  = nCols * buttonWidth + (nCols + 1) * gap;
 topReserve    = hintHeight + 2 * buttonHeight + 2 * gap;   % hint + top control row + gap to number grid
 bottomReserve = 2 * buttonHeight + 3 * gap;   % stacked plot-time + REJECT + margins
-figHeight = topMargin + topReserve + nRows * buttonHeight + max(0, nRows - 1) * gap + bottomReserve;
+nonGridHeight = topMargin + topReserve + bottomReserve;
+gridLayout    = rejSelectorGridLayout(nButtons, buttonWidth, buttonHeight, gap, nonGridHeight, pad);
+nCols         = gridLayout.nCols;
+figWidth      = gridLayout.figWidth;
+figHeight     = gridLayout.figHeight;
 
 hFig = figure( ...
     'Name', 'EEG Component Selector', ...
     'MenuBar', 'none', ...
     'ToolBar', 'none', ...
     'NumberTitle', 'off', ...
-    'Position', [300 300 figWidth figHeight], ...
+    'Position', gridLayout.position, ...
     'Resize', 'off');
-
-% Screen corner placement: same 200px padding as functions/askAction.m contDlg,
-% but bottom-right (askAction uses top-right: sc(3)-w-200, sc(4)-H-200).
-sc  = get(groot, 'ScreenSize');
-pad = 200;
-set(hFig, 'Position', [sc(3) - figWidth - pad, sc(2) + pad, figWidth, figHeight]);
 
 % Store selection state and button handles in appdata
 selection = false(1, nButtons);
@@ -96,7 +92,7 @@ uicontrol( ...
     'Position', [gap, rejectY, figWidth - 2 * gap, buttonHeight], ...
     'Callback', @(src, evt)rejectButtonCallback());
 
-% Create number buttons (1..nButtons) in 3 columns, as many rows as needed
+% Create number buttons (1..nButtons); 3+ columns when needed to fit screen
 for k = 1:nButtons
     row = floor((k - 1) / nCols);   % 0-based row index
     col = mod((k - 1), nCols);      % 0-based col index
