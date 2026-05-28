@@ -22,32 +22,28 @@ chanLabels = {EEG.chanlocs.labels};
 nButtons   = numel(chanLabels);
 
 % Parameters (rejICsButtons style)
-nCols         = 3;
-nRows         = ceil(nButtons / nCols);
 buttonWidth   = 70;   % wider for channel names (e.g. FCz, T7)
 buttonHeight  = 30;
 gap           = 10;
 topMargin     = 20;
+pad           = 200;
 
 % Figure size: top row (Plot time + Plot Spectra), channel grid, two full-width bottom rows
 reservedTop    = buttonHeight + 2 * gap;
 reservedBottom = 2 * buttonHeight + 3 * gap;
-figWidth       = nCols * buttonWidth + (nCols + 1) * gap;
-figHeight      = topMargin + reservedTop + gap + nRows * buttonHeight + max(0, nRows - 1) * gap + gap + reservedBottom;
+nonGridHeight  = topMargin + reservedTop + 2 * gap + reservedBottom;
+gridLayout     = rejSelectorGridLayout(nButtons, buttonWidth, buttonHeight, gap, nonGridHeight, pad);
+nCols          = gridLayout.nCols;
+figWidth       = gridLayout.figWidth;
+figHeight      = gridLayout.figHeight;
 
 hFig = figure( ...
     'Name', 'EEG Channel Selector', ...
     'MenuBar', 'none', ...
     'ToolBar', 'none', ...
     'NumberTitle', 'off', ...
-    'Position', [300 300 figWidth figHeight], ...
+    'Position', gridLayout.position, ...
     'Resize', 'off');
-
-% Screen corner placement: same 200px padding as functions/askAction.m contDlg,
-% but bottom-right (askAction uses top-right: sc(3)-w-200, sc(4)-H-200).
-sc  = get(groot, 'ScreenSize');
-pad = 200;
-set(hFig, 'Position', [sc(3) - figWidth - pad, sc(2) + pad, figWidth, figHeight]);
 
 % Store selection state and button handles
 selection = false(1, nButtons);
@@ -110,7 +106,7 @@ uicontrol( ...
     'Position', [gap, rejectY, fullCtrlWidth, buttonHeight], ...
     'Callback', @(src, evt) rejectCallback(hFig, plotSpectraFunc));
 
-% --- Channel buttons in 3 columns ---
+% --- Channel buttons (3+ columns when needed to fit screen) ---
 for k = 1:nButtons
     row = floor((k - 1) / nCols);
     col = mod((k - 1), nCols);
