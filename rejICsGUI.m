@@ -14,14 +14,14 @@ nButtons      = size(EEG.icaweights, 1);
 buttonWidth   = 60;
 buttonHeight  = 30;
 gap           = 10;
-topMargin     = 20;
-hintHeight    = 22;   % one-line hint above plot ICs
+topMargin     = 26;
+hintHeight    = 30;   % one-line hint above plot ICs
 numberGridYOffset = topMargin + gap / 2;   % center number buttons between top and bottom controls
 pad           = 200;
 
 % Figure size (hint + top bar + number grid + bottom: two stacked full-width buttons)
-topReserve    = hintHeight + 2 * buttonHeight + 2 * gap;   % hint + top control row + gap to number grid
-bottomReserve = 2 * buttonHeight + 3 * gap;   % stacked plot-time + REJECT + margins
+topReserve    = hintHeight + buttonHeight + 2 * gap;   % hint + top control row + gap to number grid
+bottomReserve = 2 * buttonHeight + 2 * gap;   % stacked plot-time + REJECT + margins
 nonGridHeight = topMargin + topReserve + bottomReserve;
 gridLayout    = rejSelectorGridLayout(nButtons, buttonWidth, buttonHeight, gap, nonGridHeight, pad);
 nCols         = gridLayout.nCols;
@@ -52,7 +52,7 @@ controlGray       = [0.8 0.8 0.8];        % gray for control buttons
 uicontrol( ...
     'Parent',  hFig, ...
     'Style',   'text', ...
-    'String',  'right click to plot time without only that IC', ...
+    'String',  'right-click: plot time w/o that IC  |  middle-click: pop_prop', ...
     'FontSize', 8, ...
     'HorizontalAlignment', 'center', ...
     'BackgroundColor', defaultColor, ...
@@ -121,11 +121,16 @@ setappdata(hFig, 'buttonHandles', buttonHandles);
 end
 
 function numberButtonRightClickPlot(hFig, idx)
-% Right-click: single-plot. Left-click down clears stale suppress flag (see toggle fn).
+% Right-click: single-plot.  Middle-click: pop_prop.
+% Left-click down clears stale suppress flag (see toggle fn).
 st = get(hFig, 'SelectionType');
 if strcmpi(st, 'alt')
     setappdata(hFig, 'rejICsSuppressNumberToggle', true);
     plotCallback(hFig, idx);
+elseif strcmpi(st, 'extend')
+    setappdata(hFig, 'rejICsSuppressNumberToggle', true);
+    EEG = evalin('base', 'EEG');
+    pop_prop(EEG, 0, idx, [], { 'freqrange', [1 50] });
 else
     if isappdata(hFig, 'rejICsSuppressNumberToggle')
         rmappdata(hFig, 'rejICsSuppressNumberToggle');
